@@ -5,6 +5,7 @@ import ChatContainer from './components/ChatContainer';
 import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
 import chatReducer from './store/chatSlice'
+import { Rating } from 'react-simple-star-rating'
 
 
 const store = configureStore({
@@ -39,8 +40,14 @@ const responsesArray = [
 function App() {
   const [message, setMessage] = useState(null);
   const [value, setValue] = useState(null);
-  const [previousChats, setPreviousChats] = useState([]);
+  
   const [currentTitle, setCurrentTitle] = useState(null);
+  const [feedback, setFeedback] = useState('');
+  const [feedbackInput, setFeedbackInput] = useState('');
+  const [hoveredIndex, setHoveredIndex] = useState(null);
+  const [rating, setRating] = useState(null);
+  const initialChats = JSON.parse(localStorage.getItem('previousChats')) || [];
+  const [previousChats, setPreviousChats] = useState(initialChats);
 
   useEffect(() => {
     if(!currentTitle && value && message){
@@ -51,15 +58,27 @@ function App() {
         [...prevChats, {
           title: currentTitle,
           role: 'You',
-          content: value
+          content: value || message
         }, {
           title: currentTitle,
           role: 'AI',
-          content: message
+          content: message,
+          like: null,
+          dislike: null,
+          rating: rating,
+          feedback: feedback,
         }]
       ))
+      setValue('');
+      setRating(null)
     }
-  }, [message, currentTitle])
+  }, [message, currentTitle, rating])
+
+  useEffect(() => {
+    localStorage.setItem('previousChats', JSON.stringify(previousChats));
+  }, [previousChats]);
+
+  
 
   const handleClick = (uniqueTitle) => {
     setCurrentTitle(uniqueTitle);
@@ -78,8 +97,54 @@ function App() {
   };
 
   const getResponse = () => {
-    setMessage(responsesArray[Math.floor(Math.random()*20)])
+    setMessage(responsesArray[Math.floor(Math.random()*20)]);
   }
+ 
+  const handleFeedback = (feedbackType, index) => {
+    setPreviousChats((prevChats) =>
+      prevChats.map((chat, i) =>
+        i === index
+          ? {
+              ...chat,
+              like: feedbackType === 'like' ? true : false,
+              dislike: feedbackType === 'dislike' ? true : false,
+            }
+          : chat
+      )
+    );
+  };
+
+  const handleSaveFeedback = () => {
+    if (currentTitle && feedbackInput !== '') {
+      setFeedback(feedbackInput); 
+      setPreviousChats((prevChats) =>
+        prevChats.map((chat) =>
+          chat.title === currentTitle && chat.role === 'AI'
+            ? {
+                ...chat,
+                feedback: feedbackInput,
+              }
+            : chat
+        )
+      );
+    }
+  };
+
+  const handleRating = (rate) => {
+    setRating(rate);
+    if (currentTitle) {
+      setPreviousChats((prevChats) =>
+        prevChats.map((chat) =>
+          chat.title === currentTitle && chat.role === 'AI'
+            ? {
+                ...chat,
+                rating: rate,
+              }
+            : chat
+        )
+      );
+    }
+  };
 
   return (
     <Provider store={store}>
@@ -98,15 +163,62 @@ function App() {
       <ul className='feed'>
         {currentChat?.map((chatMessage, index) => <li key={index}>
           <p className='role'>{chatMessage.role}</p>
+          <div >
           <p>{chatMessage.content}</p>
+          {chatMessage.role === 'AI' && (
+                  <div  onMouseEnter={() => setHoveredIndex(index)}
+                  onMouseLeave={() => setHoveredIndex(null)} style={{ display: 'flex', flexDirection: 'column',  alignItems: 'flex-start'}}>
+                 
+                    <div style={{ opacity: hoveredIndex === index ? 1 : 0 }} className="feedback-buttons">
+                      <button onClick={() => handleFeedback('like', index)} style={{backgroundColor:  chatMessage?.like === true ? 'green' : null} }>
+                        👍
+                      </button>
+                      <button onClick={() => handleFeedback('dislike', index)} style={{backgroundColor:  chatMessage?.dislike === true ? 'red' : null} }>
+                        👎
+                      </button>
+                    </div>
+      
+                  </div>
+                )}
+          </div>
+          
         </li>)}
       </ul>
+      
       <div className='bottom-section'>
         <div className='input-container'>
+        {currentChat.length > 0 && (
+          <>
+          {feedback === '' ? (
+          <div className="user-feedback">
+            <div style={{ display: 'flex', flexDirection: 'row' }}>
+              <textarea
+                placeholder="Provide your feedback..."
+                value={feedbackInput}
+                onChange={(e) => setFeedbackInput(e.target.value)}
+                className='feedback'
+              />
+              <button onClick={handleSaveFeedback}>Save</button>
+            </div>
+          </div>
+        ) : (
+          <div className="user-feedback">
+            <p>{feedback}</p>
+          </div>
+        )}
+              <Rating
+              initialValue={rating}
+        onClick={handleRating}
+        size={25}
+      />
+              </>
+            )}
           <input className='input' value={value} onChange={(e) => {setValue(e.target.value)}} />
           <div id='submit' onClick={getResponse}>➢</div>
         </div>
-        <p className='info'>Assignment from Soul AI. submitted by Manoj Kumar Bayyarapu</p>
+        
+            
+        <p className='info'>Assignment from Soul AI. Submitted by Manoj Kumar Bayyarapu</p>
       </div>
      </section>
     </div>

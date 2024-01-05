@@ -56,7 +56,7 @@
 }
 
 .info {
-  color: rgba(255,255,255,0.5);
+  color: rgba(0,0,0,0.5);
   font-size: 12px;
   padding: 10px;
 }
@@ -67,9 +67,6 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  /* position: fixed;
-  bottom: 0;
-  background-color: white; */
 }
 
 .input-container {
@@ -106,7 +103,7 @@
 
 .feed {
   /* overflow: scroll; */
-  width: 90%;
+  width: 50%;
   padding: 0;
   white-space: nowrap;
 }
@@ -129,6 +126,14 @@
   min-width: 100px;
 }
 
+.user-feedback {
+  width: 100%;
+  
+}
+
+.feedback {
+  width: 100%;
+}
 
 
 
